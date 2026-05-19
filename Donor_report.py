@@ -1,0 +1,122 @@
+import sqlite3
+from tkinter import*
+from tkinter import ttk
+from tkinter import font
+from random import randint
+from PIL import ImageTk,Image
+
+class d_report:
+    def __init__(self,con):
+        #self.root = Tk()
+        self.con = con
+        self.c = self.con.cursor()
+        self.root=Toplevel()
+        self.root.geometry("1500x500+200+80")
+        self.root.resizable(width=False, height=False)
+        self.root.title("DSR Donor_Report")
+        self.root.config(bg="lightblue")
+
+        self.frm1 = Frame(self.root, width=978, height=50, relief="ridge", bg='#99004d', bd=5)
+        self.frm1.place(x=3, y=3)
+
+        self.frm2 = Frame(self.root, width=1200, height=308, relief="ridge", bg='#99004d', bd=5)
+        self.frm2.place(x=3, y=53)
+
+        self.frm3 = Frame(self.root, width=978, height=50, relief="ridge", bg='#99004d', bd=5)
+        self.frm3.place(x=3, y=361)
+
+
+        self.l1 = Label(self.frm1, text='DONOR REPORT', font=('Helvetica', 15, font.BOLD), bg='#99004d',fg="white")
+        self.l1.place(x=5, y=4)
+
+        self.e1 = Entry(self.frm1, width=20, font=('Helvetica', 10, font.BOLD))
+        self.e1.place(x=230, y=4)
+        self.e1.bind('<KeyRelease>',self.select_name)
+
+        self.b1 = Button(self.frm3, text='GENERATE REPORT', width=20, font=('Helvetica', 11, font.BOLD), bd=3, bg="#33BDC4",state=DISABLED)
+        self.b1.place(x=365, y=3)
+
+        val = ["LADAKH","JAMMU KASHMIR","HIMACHAL PRADESH","UTTARAKHAND","DELHI","UTTAR PRADESH","BIHAR","JHARKHAND","ASSAM","NAGALAND","MANIPUR","MIZORAMNM","WEST BENGAL","ODISHA","CHATTISGRARH","ANDRA PRADESH","TAMIL NADU","KERELA","KARNATAKA","TELENGANA","MAHARASTRA","GUJARAT","RAJASTHAN","MADHYA PRADESH"]
+        self.cmbtext = StringVar()
+        self.cmbtext.set("Select State")
+        self.cmb = ttk.Combobox(self.frm1, width=20, textvariable=self.cmbtext, values=val,state='readonly')
+        # self.cmb1 = ttk.Combobox(self.frm1,width=32)
+        self.cmb.place(x=400, y=4)
+        self.cmb.bind('<<ComboboxSelected>>', self.combo_select)
+
+        self.tree = ttk.Treeview(self.frm2, height=13, columns=4)
+        self.tree["show"] = "headings"
+        self.tree["columns"] = ['DONOR NAME', 'DONOR ID', 'BLOOD GROUP','DONOR STATE','PHONE NO','ADDRESS']
+        for i in range(6):
+            self.tree.heading(i, text=self.tree["columns"][i])
+            if i == 0:
+                self.tree.column(i, anchor=CENTER, width=200)
+            elif i == 1 :
+                self.tree.column(i, anchor=CENTER, width=180)
+            elif i == 2:
+                self.tree.column(i, anchor=CENTER, width=175)
+            elif i==3 or i==4 or i==5:
+                self.tree.column(i, anchor=CENTER, width=200)
+
+        self.tree.place(x=5, y=5)
+        self.scrol = ttk.Scrollbar(self.frm2, orient=VERTICAL, command=self.tree.yview)
+        self.tree["yscrollcommand"] = self.scrol.set
+        self.scrol.place(x=543, y=30, height=259)
+
+        '''self.img = ImageTk.PhotoImage(file="D:\\PROGRAMS-practise(python)\\blood_bank\\images\\image27.jpeg")
+        print(self.img)
+        l_img = Label(self.root, height=280, width=560, image=self.img)
+        l_img.place(x=9, y=61)'''
+
+        #self.show()
+        self.l1.focus_force()
+        self.root.mainloop()
+
+    def combo_select(self, e):
+        state1=self.cmbtext.get()
+        print(state1)
+        self.c.close()
+        self.c = self.con.cursor()
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        lst = self.c.execute('select dname,donate.did,blood_grp,state,phone,address from donor,donate where state=? and donor.did=donate.did',(state1,))
+        #lst=self.c.execute('select dname,did,state from donor where state="WEST BENGAL"')
+        for row in lst:
+            self.tree.insert('',0,text=row[0],values=(row[0],row[1],row[2],row[3],row[4],row[5]))
+        self.tree.bind('<<TreeviewSelect>>', self.active_btn)
+        self.c.close()
+
+    def active_btn(self,e):
+        #print(" dfgv")
+        #if(x=1):
+        if self.tree.item(self.tree.selection())['text']!="":
+            self.b1.config(state=NORMAL)
+            self.b1.config(state=NORMAL)
+        else:
+            self.b1.config(state=DISABLED)
+            self.b1.config(state=DISABLED)
+
+    def select_name(self,e):
+        '''name=self.e1.get()
+        print(name)
+        self.c.close()
+        self.c = self.con.cursor()
+        self.c.execute("select * from donor where dname like='?%'",(name,))
+        self.con.commit()'''
+        self.show()
+    def show(self):
+        self.c.close()
+        self.c=self.con.cursor()
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        name = self.e1.get()
+        self.c.close()
+        self.c = self.con.cursor()
+        lst=self.c.execute("select dname,donor.did,blood_grp,state,phone,address from donor,donate where dname like ? and donor.did=donate.did", (name+'%',))
+        self.con.commit()
+        for row in lst:
+            print(row)
+            self.tree.insert('',0,text=row[0],values=(row[0],row[1],row[2],row[3],row[4],row[5]))
+        self.tree.bind('<<TreeviewSelect>>', self.active_btn)
+        self.c.close()
+#d_report()
